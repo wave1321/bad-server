@@ -46,6 +46,22 @@ const cardsSchema = new mongoose.Schema<IProduct>(
     { versionKey: false }
 )
 
+cardsSchema.pre('save', function sanitizeProduct(next) {
+    if (this.isModified('title')) {
+        this.title = this.title
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+    if (this.isModified('description')) {
+        this.description = this.description
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+    next();
+});
+
 cardsSchema.index({ title: 'text' })
 
 // Можно лучше: удалять старое изображением перед обновлением сущности

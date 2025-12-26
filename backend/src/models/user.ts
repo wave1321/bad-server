@@ -217,6 +217,19 @@ userSchema.methods.calculateOrderStats = async function calculateOrderStats() {
 
     await user.save()
 }
+
+userSchema.pre('save', function sanitizeUser(next) {
+    if (this.isModified('name')) {
+        this.name = this.name
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#x27;');
+    }
+    next();
+});
+
 const UserModel = mongoose.model<IUser, IUserModel>('user', userSchema)
 
 export default UserModel

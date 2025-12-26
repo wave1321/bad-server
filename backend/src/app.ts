@@ -13,6 +13,11 @@ import routes from './routes'
 const { PORT = 3000 } = process.env
 const app = express()
 
+app.use((_req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    next();
+  });
+  
 app.use(cookieParser())
 
 app.use(cors())
@@ -41,3 +46,4 @@ const bootstrap = async () => {
 }
 
 bootstrap()
+console.log(`HOT RELOAD WORKING! ${  new Date()}`);

@@ -1,6 +1,17 @@
 import { Joi, celebrate } from 'celebrate'
 import { Types } from 'mongoose'
 
+const xssValidate = (value: string, helpers: any) => {
+    if (typeof value === 'string') {
+        // Проверяем на основные XSS-векторы
+        const xssPattern = /<script|javascript:|on\w+=/i;
+        if (xssPattern.test(value)) {
+            return helpers.message({ custom: 'Обнаружен недопустимый контент' });
+        }
+    }
+    return value;
+};
+
 // eslint-disable-next-line no-useless-escape
 export const phoneRegExp = /^(\+\d+)?(?:\s|-?|\(?\d+\)?)+$/
 
@@ -38,13 +49,13 @@ export const validateOrderBody = celebrate({
         phone: Joi.string().required().pattern(phoneRegExp).messages({
             'string.empty': 'Не указан телефон',
         }),
-        address: Joi.string().required().messages({
+        address: Joi.string().required().custom(xssValidate).messages({
             'string.empty': 'Не указан адрес',
         }),
         total: Joi.number().required().messages({
             'string.empty': 'Не указана сумма заказа',
         }),
-        comment: Joi.string().optional().allow(''),
+        comment: Joi.string().optional().allow('').custom(xssValidate),
     }),
 })
 
@@ -52,7 +63,7 @@ export const validateOrderBody = celebrate({
 // name и link - обязательные поля, name - от 2 до 30 символов, link - валидный url
 export const validateProductBody = celebrate({
     body: Joi.object().keys({
-        title: Joi.string().required().min(2).max(30).messages({
+        title: Joi.string().required().min(2).max(30).custom(xssValidate).messages({
             'string.min': 'Минимальная длина поля "name" - 2',
             'string.max': 'Максимальная длина поля "name" - 30',
             'string.empty': 'Поле "title" должно быть заполнено',
@@ -61,10 +72,10 @@ export const validateProductBody = celebrate({
             fileName: Joi.string().required(),
             originalName: Joi.string().required(),
         }),
-        category: Joi.string().required().messages({
+        category: Joi.string().required().custom(xssValidate).messages({
             'string.empty': 'Поле "category" должно быть заполнено',
         }),
-        description: Joi.string().required().messages({
+        description: Joi.string().required().custom(xssValidate).messages({
             'string.empty': 'Поле "description" должно быть заполнено',
         }),
         price: Joi.number().allow(null),
@@ -102,7 +113,7 @@ export const validateObjId = celebrate({
 
 export const validateUserBody = celebrate({
     body: Joi.object().keys({
-        name: Joi.string().min(2).max(30).messages({
+        name: Joi.string().min(2).max(30).custom(xssValidate).messages({
             'string.min': 'Минимальная длина поля "name" - 2',
             'string.max': 'Максимальная длина поля "name" - 30',
         }),
@@ -112,6 +123,7 @@ export const validateUserBody = celebrate({
         email: Joi.string()
             .required()
             .email()
+            .custom(xssValidate)
             .message('Поле "email" должно быть валидным email-адресом')
             .messages({
                 'string.empty': 'Поле "email" должно быть заполнено',
