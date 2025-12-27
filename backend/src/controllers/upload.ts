@@ -23,26 +23,50 @@ export const uploadFile = async (
         return next(new BadRequestError('Файл слишком маленький. Минимальный размер: 2KB'));
     }
 
-    // Проверка соответствия MIME-типа и расширения (дополнительная проверка)
-    const fileExt = req.file.originalname.toLowerCase().substring(
-        req.file.originalname.lastIndexOf('.')
-    );
+    // Строгая проверка MIME типа
+    const allowedMimeTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png', 
+        'image/gif'
+    ];
+    
+    // Проверяем что MIME тип точно соответствует изображению
+    if (!allowedMimeTypes.includes(req.file.mimetype)) {
+        const filePath = path.join(req.file.destination, req.file.filename);
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+        return next(new BadRequestError('Неверный тип файла'));
+    }
 
+    // Проверка расширения
+    const fileExt = path.extname(req.file.originalname).toLowerCase();
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif'];
+    
+    if (!allowedExtensions.includes(fileExt)) {
+        const filePath = path.join(req.file.destination, req.file.filename);
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+        return next(new BadRequestError('Неверное расширение файла'));
+    }
+
+    // Проверка соответствия MIME типа и расширения
     const mimeToExt: Record<string, string[]> = {
         'image/jpeg': ['.jpg', '.jpeg'],
+        'image/jpg': ['.jpg', '.jpeg'],
         'image/png': ['.png'],
         'image/gif': ['.gif'],
     };
 
-    if (mimeToExt[req.file.mimetype]) {
-        const allowedExts = mimeToExt[req.file.mimetype];
-        if (!allowedExts.includes(fileExt)) {
-            const filePath = path.join(req.file.destination, req.file.filename);
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-            }
-            return next(new BadRequestError(`Для MIME типа ${req.file.mimetype} ожидаются расширения: ${allowedExts.join(', ')}`));
+    const allowedExts = mimeToExt[req.file.mimetype];
+    if (!allowedExts || !allowedExts.includes(fileExt)) {
+        const filePath = path.join(req.file.destination, req.file.filename);
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
         }
+        return next(new BadRequestError('Несоответствие типа и расширения файла'));
     }
 
     try {
