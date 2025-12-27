@@ -12,3 +12,6 @@ docker compose up -d
 5. На странице http://localhost/login/ можно авторизоваться.
 6. Админка находится по адресу http://localhost/admin/
 
+## Информация
+1. https://github.com/wave1321/bad-server
+2. Сергей Бовин, 33 когорта, Фулстек-разработчик расширенный
