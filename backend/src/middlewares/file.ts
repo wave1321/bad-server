@@ -6,6 +6,8 @@ import crypto from 'crypto'
 type DestinationCallback = (error: Error | null, destination: string) => void
 type FileNameCallback = (error: Error | null, filename: string) => void
 
+const allowedExtensions = ['.png', '.jpg', '.jpeg', '.gif'];
+
 const storage = multer.diskStorage({
     destination: (
         _req: Request,
@@ -28,10 +30,16 @@ const storage = multer.diskStorage({
         file: Express.Multer.File,
         cb: FileNameCallback
     ) => {
-        const fileExt = file.originalname.split('.').pop();
-        const uniqueName = `${crypto.randomBytes(16).toString('hex')  }.${  fileExt}`;
+        const originalExt = file.originalname.split('.').pop() || '';
+    
+        // Проверяем что расширение безопасно
+        const safeExt = allowedExtensions.find(ext => 
+            ext.substring(1) === originalExt.toLowerCase()
+        )?.substring(1) || 'bin';
+        
+        const uniqueName = `${crypto.randomBytes(16).toString('hex')}.${safeExt}`;
         cb(null, uniqueName);
-    },
+        },
 })
 
 const types = [
@@ -39,10 +47,7 @@ const types = [
     'image/jpg',
     'image/jpeg',
     'image/gif',
-    'image/svg+xml',
 ]
-
-const allowedExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.svg'];
 
 const fileFilter = (
     _req: Request,
@@ -69,10 +74,9 @@ const fileFilter = (
 
     // Проверка соответствия расширения и MIME типа
     const mimeToExt: Record<string, string[]> = {
-        'image/jpeg': ['.jpg', '.jpeg', '.jpe', '.jif', '.jfif', '.jfi'],
+        'image/jpeg': ['.jpg', '.jpeg',],
         'image/png': ['.png'],
         'image/gif': ['.gif'],
-        'image/svg+xml': ['.svg', '.svgz'],
     };
     
     // Если MIME тип есть в нашем маппинге, проверяем расширение
@@ -83,24 +87,6 @@ const fileFilter = (
         }
     } else {
         return cb(new Error(`MIME тип ${file.mimetype} не поддерживается`));
-    }
-
-    // Проверка на двойные расширения (например: photo.jpg.exe или image.png.php)
-    const parts = fileName.split('.');
-    if (parts.length > 2) {
-        // Проверяем последнее расширение
-        const lastExt = `.${  parts[parts.length - 1]}`;
-        if (!allowedExtensions.includes(lastExt)) {
-            return cb(new Error('Файл имеет несколько расширений'));
-        }
-        
-        // Также проверяем средние части на опасные расширения
-        const dangerousMiddleParts = ['php', 'exe', 'js', 'html', 'htm', 'asp', 'aspx', 'jar', 'war'];
-        for (let i = 1; i < parts.length - 1; i+=1) {
-            if (dangerousMiddleParts.includes(parts[i])) {
-                return cb(new Error('Файл содержит опасные расширения'));
-            }
-        }
     }
     
     // Проверка имени файла на опасные символы
@@ -136,7 +122,7 @@ export default multer({
     storage, 
     fileFilter,
     limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB максимум
-        files: 1, // только один файл
+        fileSize: 10 * 1024 * 1024,
+        files: 1,
     }
 })
