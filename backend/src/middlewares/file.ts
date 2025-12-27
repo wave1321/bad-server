@@ -20,7 +20,7 @@ const storage = multer.diskStorage({
                 __dirname,
                 process.env.UPLOAD_PATH_TEMP
                     ? `../public/${process.env.UPLOAD_PATH_TEMP}`
-                    : '../public'
+                    : '../public/temp'
             )
         )
     },
@@ -60,7 +60,7 @@ const fileFilter = (
     }
 
     const fileName = file.originalname.toLowerCase();
-    const fileExt = fileName.substring(file.originalname.lastIndexOf('.'));
+    const fileExt = fileName.substring(fileName.lastIndexOf('.'));
 
     // Проверка что файл имеет расширение
     if (!fileExt || fileExt.length < 2) {
