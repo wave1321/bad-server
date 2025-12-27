@@ -22,9 +22,20 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
             refreshToken,
             REFRESH_TOKEN.cookie.options
         )
+        const safeUser = {
+            ...user.toObject(),
+            name: user.name
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;'),
+            email: user.email
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+        };
         return res.json({
             success: true,
-            user,
+            user: safeUser,
             accessToken,
         })
     } catch (err) {
