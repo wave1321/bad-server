@@ -5,13 +5,8 @@ import path from 'path'
 export default function serveStatic(baseDir: string) {
     return (req: Request, res: Response, next: NextFunction) => {
         // Определяем полный путь к запрашиваемому файлу
-        const normalizedPath = path.normalize(req.path).replace(/^(\.\.[/\\])+/, '');
-        const filePath = path.join(baseDir, normalizedPath)
+        const filePath = path.join(baseDir, req.path)
 
-        const relativePath = path.relative(baseDir, filePath);
-        if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
-            return next(); // Отдаем 404
-        }
         // Проверяем, существует ли файл
         fs.access(filePath, fs.constants.F_OK, (err) => {
             if (err) {
