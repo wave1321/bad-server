@@ -55,11 +55,6 @@ const fileFilter = (
     file: Express.Multer.File,
     cb: FileFilterCallback
 ) => {
-    // Проверка MIME типа
-    if (!types.includes(file.mimetype)) {
-        return cb(new Error('Неподдерживаемый тип файла'));
-    }
-
     const fileName = file.originalname.toLowerCase();
     const fileExt = fileName.substring(fileName.lastIndexOf('.'));
 
@@ -73,9 +68,14 @@ const fileFilter = (
         return cb(new Error('Неподдерживаемое расширение файла'));
     }
 
+    // Проверка MIME типа
+    if (!types.includes(file.mimetype)) {
+        return cb(new Error('Неподдерживаемый тип файла'));
+    }
+
     // Проверка соответствия расширения и MIME типа
     const mimeToExt: Record<string, string[]> = {
-        'image/jpeg': ['.jpg', '.jpeg',],
+        'image/jpeg': ['.jpg', '.jpeg'],
         'image/png': ['.png'],
         'image/gif': ['.gif'],
         'image/svg+xml': ['.svg', '.svgz'],

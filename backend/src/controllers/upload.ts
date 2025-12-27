@@ -13,7 +13,7 @@ export const uploadFile = async (
         return next(new BadRequestError('Файл не загружен'))
     }
 
-    // Проверка минимального размера (больше 2kb)
+    // Дополнительная проверка минимального размера (больше 2kb)
     if (req.file.size < 2 * 1024) {
         // Удаляем загруженный файл, если он не прошел проверку
         const filePath = path.join(req.file.destination, req.file.filename);
@@ -23,26 +23,7 @@ export const uploadFile = async (
         return next(new BadRequestError('Файл слишком маленький. Минимальный размер: 2KB'));
     }
 
-    // Проверка максимального размера (10MB)
-    if (req.file.size > 10 * 1024 * 1024) {
-        const filePath = path.join(req.file.destination, req.file.filename);
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-        }
-        return next(new BadRequestError('Файл слишком большой. Максимальный размер: 10MB'));
-    }
-
-    // Проверка MIME-типа
-    const allowedMimeTypes = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif'];
-    if (!allowedMimeTypes.includes(req.file.mimetype)) {
-        const filePath = path.join(req.file.destination, req.file.filename);
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-        }
-        return next(new BadRequestError('Неподдерживаемый тип файла'));
-    }
-
-    // Проверка соответствия MIME-типа и расширения
+    // Проверка соответствия MIME-типа и расширения (дополнительная проверка)
     const fileExt = req.file.originalname.toLowerCase().substring(
         req.file.originalname.lastIndexOf('.')
     );
@@ -67,7 +48,7 @@ export const uploadFile = async (
     try {
         const fileName = process.env.UPLOAD_PATH_TEMP
             ? `/${process.env.UPLOAD_PATH_TEMP}/${req.file.filename}`
-            : `/${req.file.filename}`
+            : `/temp/${req.file.filename}`
         return res.status(constants.HTTP_STATUS_CREATED).send({
             fileName,
             originalName: req.file.originalname,
