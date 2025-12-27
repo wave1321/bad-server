@@ -47,6 +47,7 @@ const types = [
     'image/jpg',
     'image/jpeg',
     'image/gif',
+    'image/svg+xml',
 ]
 
 const fileFilter = (
@@ -77,6 +78,7 @@ const fileFilter = (
         'image/jpeg': ['.jpg', '.jpeg',],
         'image/png': ['.png'],
         'image/gif': ['.gif'],
+        'image/svg+xml': ['.svg', '.svgz'],
     };
     
     // Если MIME тип есть в нашем маппинге, проверяем расширение
