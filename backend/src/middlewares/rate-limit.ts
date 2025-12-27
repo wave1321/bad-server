@@ -1,9 +1,25 @@
 import rateLimit from 'express-rate-limit'
 
-// Базовый лимитер для API
+// Для маршрутов по умолчанию
+export const globalLimiter = rateLimit({
+    windowMs: 10 * 1000,
+    max: 10,
+    message: { 
+        error: 'Слишком много запросов, попробуйте позже' 
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    skipSuccessfulRequests: false, // считать ВСЕ запросы
+    keyGenerator: (req) => 
+        // Используем IP адрес
+         req.ip || req.headers['x-forwarded-for'] as string || 'unknown'
+    
+});
+
+// Для API
 export const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 минут
-    max: 100, // максимум 100 запросов за 15 минут
+    windowMs: 10 * 1000,
+    max: 5,
     message: 'Слишком много запросов с этого IP, попробуйте позже',
     standardHeaders: true,
     legacyHeaders: false,
@@ -11,8 +27,8 @@ export const apiLimiter = rateLimit({
 
 // Более строгий лимитер для авторизации
 export const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 5, // максимум 5 попыток входа
+    windowMs: 60 * 1000,
+    max: 10,
     message: 'Слишком много попыток входа, попробуйте позже',
     standardHeaders: true,
     legacyHeaders: false,

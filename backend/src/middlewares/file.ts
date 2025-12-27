@@ -53,9 +53,15 @@ const fileFilter = (
     if (!types.includes(file.mimetype)) {
         return cb(new Error('Неподдерживаемый тип файла'));
     }
-    
-    // Проверка расширения файла
+
     const fileExt = file.originalname.toLowerCase().substring(file.originalname.lastIndexOf('.'));
+
+    // Проверка что файл имеет расширение
+    if (!fileExt || fileExt.length < 2) {
+        return cb(new Error('Файл не имеет расширения'));
+    }
+
+    // Проверка расширения файла
     if (!allowedExtensions.includes(fileExt)) {
         return cb(new Error('Неподдерживаемое расширение файла'));
     }
@@ -77,6 +83,11 @@ const fileFilter = (
     const dangerousChars = /[<>:"/\\|?*]|\.\./;
     if (dangerousChars.test(file.originalname)) {
         return cb(new Error('Недопустимое имя файла'));
+    }
+
+    // Проверка размера имени файла
+    if (file.originalname.length > 255) {
+        return cb(new Error('Имя файла слишком длинное'));
     }
 
     return cb(null, true)
