@@ -54,7 +54,8 @@ const fileFilter = (
         return cb(new Error('Неподдерживаемый тип файла'));
     }
 
-    const fileExt = file.originalname.toLowerCase().substring(file.originalname.lastIndexOf('.'));
+    const fileName = file.originalname.toLowerCase();
+    const fileExt = fileName.substring(file.originalname.lastIndexOf('.'));
 
     // Проверка что файл имеет расширение
     if (!fileExt || fileExt.length < 2) {
@@ -68,26 +69,64 @@ const fileFilter = (
 
     // Проверка соответствия расширения и MIME типа
     const mimeToExt: Record<string, string[]> = {
-        'image/jpeg': ['.jpg', '.jpeg'],
+        'image/jpeg': ['.jpg', '.jpeg', '.jpe', '.jif', '.jfif', '.jfi'],
         'image/png': ['.png'],
         'image/gif': ['.gif'],
-        'image/svg+xml': ['.svg'],
+        'image/svg+xml': ['.svg', '.svgz'],
     };
     
+    // Если MIME тип есть в нашем маппинге, проверяем расширение
     const allowedExts = mimeToExt[file.mimetype];
-    if (!allowedExts || !allowedExts.includes(fileExt)) {
-        return cb(new Error('Несоответствие типа файла и расширения'));
+    if (allowedExts) {
+        if (!allowedExts.includes(fileExt)) {
+            return cb(new Error(`Для MIME типа ${file.mimetype} ожидаются расширения: ${allowedExts.join(', ')}`));
+        }
+    } else {
+        return cb(new Error(`MIME тип ${file.mimetype} не поддерживается`));
+    }
+
+    // Проверка на двойные расширения (например: photo.jpg.exe или image.png.php)
+    const parts = fileName.split('.');
+    if (parts.length > 2) {
+        // Проверяем последнее расширение
+        const lastExt = `.${  parts[parts.length - 1]}`;
+        if (!allowedExtensions.includes(lastExt)) {
+            return cb(new Error('Файл имеет несколько расширений'));
+        }
+        
+        // Также проверяем средние части на опасные расширения
+        const dangerousMiddleParts = ['php', 'exe', 'js', 'html', 'htm', 'asp', 'aspx', 'jar', 'war'];
+        for (let i = 1; i < parts.length - 1; i+=1) {
+            if (dangerousMiddleParts.includes(parts[i])) {
+                return cb(new Error('Файл содержит опасные расширения'));
+            }
+        }
     }
     
     // Проверка имени файла на опасные символы
-    const dangerousChars = /[<>:"/\\|?*]|\.\./;
-    if (dangerousChars.test(file.originalname)) {
-        return cb(new Error('Недопустимое имя файла'));
+    const dangerousPatterns = [
+        // eslint-disable-next-line no-control-regex
+        /[<>:"/\\|?*\x00-\x1F]/, // Опасные символы
+        /\.\./, // Попытка пути
+        /^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/i, // Зарезервированные имена Windows
+        /\.(php|exe|js|html|htm|asp|aspx|jar|war|sh|bat|cmd|ps1)$/i, // Опасные расширения где-либо в имени
+    ];
+    
+    // eslint-disable-next-line no-restricted-syntax
+    for (const pattern of dangerousPatterns) {
+        if (pattern.test(fileName)) {
+            return cb(new Error('Недопустимое имя файла'));
+        }
     }
 
     // Проверка размера имени файла
     if (file.originalname.length > 255) {
         return cb(new Error('Имя файла слишком длинное'));
+    }
+
+    // Проверка на пустое имя файла
+    if (!file.originalname.trim()) {
+        return cb(new Error('Имя файла не может быть пустым'));
     }
 
     return cb(null, true)
