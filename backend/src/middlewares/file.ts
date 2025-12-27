@@ -42,13 +42,41 @@ const types = [
     'image/svg+xml',
 ]
 
+const allowedExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.svg'];
+
 const fileFilter = (
     _req: Request,
     file: Express.Multer.File,
     cb: FileFilterCallback
 ) => {
+    // Проверка MIME типа
     if (!types.includes(file.mimetype)) {
-        return cb(null, false)
+        return cb(new Error('Неподдерживаемый тип файла'));
+    }
+    
+    // Проверка расширения файла
+    const fileExt = file.originalname.toLowerCase().substring(file.originalname.lastIndexOf('.'));
+    if (!allowedExtensions.includes(fileExt)) {
+        return cb(new Error('Неподдерживаемое расширение файла'));
+    }
+
+    // Проверка соответствия расширения и MIME типа
+    const mimeToExt: Record<string, string[]> = {
+        'image/jpeg': ['.jpg', '.jpeg'],
+        'image/png': ['.png'],
+        'image/gif': ['.gif'],
+        'image/svg+xml': ['.svg'],
+    };
+    
+    const allowedExts = mimeToExt[file.mimetype];
+    if (!allowedExts || !allowedExts.includes(fileExt)) {
+        return cb(new Error('Несоответствие типа файла и расширения'));
+    }
+    
+    // Проверка имени файла на опасные символы
+    const dangerousChars = /[<>:"/\\|?*]|\.\./;
+    if (dangerousChars.test(file.originalname)) {
+        return cb(new Error('Недопустимое имя файла'));
     }
 
     return cb(null, true)

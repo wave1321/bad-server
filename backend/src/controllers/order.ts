@@ -28,18 +28,22 @@ export const getOrders = async (
             search,
         } = req.query
 
-        const normalizedLimit = Math.min(Math.max(Number(limit), 1), 100);
+        const normalizedLimit = Math.min(Math.max(Number(limit), 1), 10);
         const normalizedPage = Math.max(Number(page), 1);
 
         const filters: FilterQuery<Partial<IOrder>> = {}
 
         if (status) {
-            if (typeof status === 'string') {
-                const allowedStatuses = ['new', 'delivering', 'completed', 'cancelled'];
-                if (allowedStatuses.includes(status)) {
-                    filters.status = status;
-                }
+            if (typeof status !== 'string') {
+                return next(new BadRequestError('Невалидный параметр status'));
             }
+            
+            const allowedStatuses = ['new', 'delivering', 'completed', 'cancelled'];
+            if (!allowedStatuses.includes(status)) {
+                return next(new BadRequestError('Невалидный статус заказа'));
+            }
+            
+            filters.status = status;
         }
 
         if (totalAmountFrom) {
